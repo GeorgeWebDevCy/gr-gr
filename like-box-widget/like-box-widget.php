@@ -14,21 +14,26 @@ License: GPL3
 class like_box_widget_facbook extends WP_Widget {
 	private static $id_of_like_box=0;
 	// Constructor //	
-	function __construct() {		
+	public function __construct() {
 		$widget_ops = array( 'classname' => 'like_box_widget_facbook', 'description' => 'Add Facebook like box' ); // Widget Settings
 		$control_ops = array( 'id_base' => 'like_box_widget_facbook' ); // Widget Control Settings
-		$this->WP_Widget( 'like_box_widget_facbook', 'Widget Facebook like box', $widget_ops, $control_ops ); // Create the widget
-
+		parent::__construct( 'like_box_widget_facbook', 'Widget Facebook like box', $widget_ops, $control_ops ); // Create the widget
 	}
 
 	/*function to display like box*/
-	function widget($args, $instance) {
-		extract( $args );
+	public function widget($args, $instance) {
+		$before_widget = isset($args['before_widget']) ? $args['before_widget'] : '';
+		$before_title = isset($args['before_title']) ? $args['before_title'] : '';
+		$after_title = isset($args['after_title']) ? $args['after_title'] : '';
+		$after_widget = isset($args['after_widget']) ? $args['after_widget'] : '';
 		// Before widget //
 		echo $before_widget;
 		
 		// This is the code of widget title //
-		if ( $instance['title'] ) { echo $before_title . $instance['title'] . $after_title; }
+		$title = isset($instance['title']) ? $instance['title'] : '';
+		if ($title !== '') {
+			echo $before_title . esc_html($title) . $after_title;
+		}
 		// Widget output code //
 		echo $this->generete_facbook_widget_page($instance);
 		// After widget //
@@ -37,24 +42,24 @@ class like_box_widget_facbook extends WP_Widget {
 	}
 
 	// function to update Widget Like Box Settings code //
-	function update($new_instance, $old_instance) {	
-		extract( $args );
-		$instance['title'] 			= strip_tags($new_instance['title']);    
-		$instance['profile_id'] 	= $new_instance['profile_id'];
-		$instance['width'] 			= $new_instance['width'];
-		$instance['height']			= $new_instance['height'];
-		$instance['responsive_width']=$new_instance['responsive_width'];
-		$instance['smaler_header']	= $new_instance['smaler_header'];
-		$instance['show_cover']		= $new_instance['show_cover'];
-		$instance['show_frends']	= $new_instance['show_frends'];
-		$instance['show_page_posts']= $new_instance['show_page_posts'];
-		$instance['locale_lang'] 	= $new_instance['locale_lang'];
+	public function update($new_instance, $old_instance) {
+		$instance = $old_instance;
+		$instance['title'] = sanitize_text_field($new_instance['title'] ?? '');
+		$instance['profile_id'] = sanitize_text_field($new_instance['profile_id'] ?? '');
+		$instance['width'] = sanitize_text_field($new_instance['width'] ?? '');
+		$instance['height'] = sanitize_text_field($new_instance['height'] ?? '');
+		$instance['responsive_width'] = sanitize_text_field($new_instance['responsive_width'] ?? 'no');
+		$instance['smaler_header'] = sanitize_text_field($new_instance['smaler_header'] ?? 'no');
+		$instance['show_cover'] = sanitize_text_field($new_instance['show_cover'] ?? 'yes');
+		$instance['show_frends'] = sanitize_text_field($new_instance['show_frends'] ?? 'yes');
+		$instance['show_page_posts'] = sanitize_text_field($new_instance['show_page_posts'] ?? 'yes');
+		$instance['locale_lang'] = sanitize_text_field($new_instance['locale_lang'] ?? 'en_US');
 		return $instance;  /// return new value of parametrs
 		
 	}
 	
 	/* Widget Facebook Like Box plugin admin page opions function code */
-	function form($instance) {
+	public function form($instance) {
 		
 		$defaults = array( 
 			'title' 		=> '',
@@ -156,6 +161,18 @@ class like_box_widget_facbook extends WP_Widget {
 	}
 	
 	public function generete_facbook_widget_page($params){
+		$defaults = array(
+			'profile_id' => '',
+			'width' => '',
+			'height' => '',
+			'responsive_width' => 'no',
+			'smaler_header' => 'no',
+			'show_cover' => 'yes',
+			'show_frends' => 'yes',
+			'show_page_posts' => 'yes',
+			'locale_lang' => 'en_US',
+		);
+		$params = wp_parse_args($params, $defaults);
 		foreach($params as $key => $value){
 			if($value=='yes')
 				$params[$key]='true';
@@ -172,10 +189,10 @@ class like_box_widget_facbook extends WP_Widget {
 			if (filter_var($params['profile_id'], FILTER_VALIDATE_URL)) { 
 				$datte_href=$params['profile_id'];
 			}
-		$facbook_front='<div class="fb-page" data-href="'.$datte_href.'" '.$facbook_genereted_params['width'].' '.$facbook_genereted_params['height'].' data-small-header="'.$params['smaler_header'].'" data-adapt-container-width="'.$params['responsive_width'].'" data-hide-cover="'.$params['show_cover'].'" data-show-facepile="'.$params['show_frends'].'" data-show-posts="'.$params['show_page_posts'].'">';
+		$facbook_front='<div class="fb-page" data-href="'.esc_url($datte_href).'" '.$facbook_genereted_params['width'].' '.$facbook_genereted_params['height'].' data-small-header="'.esc_attr($params['smaler_header']).'" data-adapt-container-width="'.esc_attr($params['responsive_width']).'" data-hide-cover="'.esc_attr($params['show_cover']).'" data-show-facepile="'.esc_attr($params['show_frends']).'" data-show-posts="'.esc_attr($params['show_page_posts']).'">';
 		$facbook_front.='<div class="fb-xfbml-parse-ignore">';
 		$facbook_front.='<blockquote cite="https://www.facebook.com/'.$params['profile_id'].'">';
-		$facbook_front.='<a href="'.$datte_href.'">';
+		$facbook_front.='<a href="'.esc_url($datte_href).'">';
 		$facbook_front.="</a></blockquote></div></div>";
 	        /*this is an promotion link for our plugin website, if you don't like it just remove it, this link doesn't hurm your website, so don't worry about this, thank you for your understanding*/
 		$facbook_front.='<div style="font-size:2px;width:2px;height:1px;overflow: hidden;"><a href="http://wpteam.org/wordpress-countdown-plugin">WordPress Countdown plugin</a></div>';
@@ -185,7 +202,7 @@ class like_box_widget_facbook extends WP_Widget {
   var js, fjs = d.getElementsByTagName(s)[0];
   if (d.getElementById(id)) return;
   js = d.createElement(s); js.id = id;
-  js.src = "//connect.facebook.net/'.$params['locale_lang'].'/sdk.js#xfbml=1&version=v2.3";
+  js.src = "//connect.facebook.net/'.esc_attr($params['locale_lang']).'/sdk.js#xfbml=1&version=v2.3";
   fjs.parentNode.insertBefore(js, fjs);
 }(document, "script", "facebook-jssdk"));</script>';
 		
@@ -193,5 +210,7 @@ class like_box_widget_facbook extends WP_Widget {
 	}
 }
 
-add_action('widgets_init', create_function('', 'return register_widget("like_box_widget_facbook");'));
+add_action('widgets_init', function () {
+	return register_widget('like_box_widget_facbook');
+});
 ?>
